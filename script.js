@@ -170,7 +170,8 @@ function createFlashcardsInterface(subject) {
     startStudy();
   });
 
-  // Botão Imprimir Flashcards
+  // Botão Imprimir Flashcards - layout modificado para dois retângulos (apenas conteúdo)
+  // com 8 pares por folha A4, em grid de 4 colunas (4 x 2 = 8 pares por página)
   document.getElementById("btn-print").addEventListener("click", function() {
     printFlashcards(subject);
   });
@@ -257,7 +258,8 @@ function createFlashcardsInterface(subject) {
     }
   }
 
-  // Função para imprimir flashcards (8 por folha A4)
+  // Função para imprimir flashcards com dois retângulos (apenas conteúdo)
+  // em grid de 4 colunas (8 pares por página) – garantindo que a altura seja maior que a largura.
   function printFlashcards(subject) {
     const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     if (cards.length === 0) {
@@ -266,22 +268,61 @@ function createFlashcardsInterface(subject) {
     }
     let printContent = '<html><head><title>Imprimir Flashcards</title>';
     printContent += '<style>';
-    printContent += '@page { size: A4; margin: 20mm; }';
-    printContent += 'body { font-family: Arial, sans-serif; }';
-    printContent += '.flashcard { border: 1px solid #000; padding: 10px; margin: 5px; width: calc(50% - 20px); display: inline-block; vertical-align: top; box-sizing: border-box; }';
-    printContent += '.page-break { page-break-after: always; }';
+    printContent += `
+      @page { size: A4; margin: 20mm; }
+      body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+      h1 { text-align: center; margin-bottom: 20px; }
+      /* Grade com 4 colunas: 4 x 2 = 8 pares por folha */
+      .flashcards-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 10px;
+      }
+      .flashcard-pair {
+        border: 1px solid #000;
+        padding: 5px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .flashcard-rect {
+        border: 1px solid #000;
+        padding: 5px;
+        margin-bottom: 5px;
+        /* Altura fixa ajustada para caber 8 pares por folha */
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .flashcard-rect:last-child {
+        margin-bottom: 0;
+      }
+      .page-break { 
+        display: block; 
+        page-break-after: always; 
+      }
+    `;
     printContent += '</style></head><body>';
+    printContent += `<h1>Flashcards - ${subject}</h1>`;
+    printContent += '<div class="flashcards-grid">';
     cards.forEach((card, index) => {
-      printContent += `<div class="flashcard">
-          <p><strong>Pergunta:</strong> ${card.question}</p>
-          <p><strong>Conteúdo:</strong> ${card.content}</p>
-          <p><strong>Resposta:</strong> ${card.answer}</p>
-      </div>`;
+      printContent += `
+        <div class="flashcard-pair">
+          <div class="flashcard-rect">${card.question}</div>
+          <div class="flashcard-rect">${card.answer}</div>
+        </div>
+      `;
+      // Insere quebra de página após cada 8 pares (4 colunas x 2 linhas)
       if ((index + 1) % 8 === 0 && index !== cards.length - 1) {
-        printContent += '<div class="page-break"></div>';
+        printContent += '</div><div class="page-break"></div><div class="flashcards-grid">';
       }
     });
+    printContent += '</div>';
     printContent += '</body></html>';
+    
     const printWindow = window.open('', '', 'height=842,width=595');
     printWindow.document.write(printContent);
     printWindow.document.close();
