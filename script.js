@@ -1,9 +1,17 @@
 document.addEventListener("DOMContentLoaded", function() {
-  // Modo Escuro
+  // Configura modo escuro e botão Início
   const toggleDark = document.getElementById("toggle-dark");
   if (toggleDark) {
     toggleDark.addEventListener("click", toggleDarkMode);
     loadTheme();
+  }
+  
+  const btnHome = document.getElementById("btn-home");
+  if (btnHome) {
+    btnHome.addEventListener("click", function() {
+      // Volta para a tela inicial
+      location.reload();
+    });
   }
 
   // Carrega as matérias salvas
@@ -36,10 +44,8 @@ function addSubjectButton(subject) {
   btn.className = "btn btn-outline-primary m-1";
   btn.textContent = subject;
   btn.addEventListener("click", function() {
-    // Oculta a seleção e os botões de matérias
     document.getElementById("subject-selection").style.display = "none";
     container.style.display = "none";
-    // Cria a interface dos flashcards para a matéria selecionada
     createFlashcardsInterface(subject);
   });
   container.appendChild(btn);
@@ -72,7 +78,6 @@ function createFlashcardsInterface(subject) {
     </section>
     <section id="section-study" class="d-none">
       <div class="text-center">
-        <!-- Container onde os flashcards serão exibidos -->
         <div id="flashcard-container" class="flashcard">
           <div class="flashcard-inner">
             <div class="flashcard-front">
@@ -88,12 +93,13 @@ function createFlashcardsInterface(subject) {
         <button id="btn-delete" class="btn btn-danger mt-3">Excluir Flashcard</button>
         <button id="btn-next" class="btn btn-primary mt-3">Próximo</button>
         <button id="btn-restart" class="btn btn-warning mt-3">Reiniciar Perguntas</button>
+        <button id="btn-print" class="btn btn-secondary mt-3">Imprimir Flashcards</button>
         <button id="btn-exit" class="btn btn-secondary mt-3">Sair</button>
       </div>
     </section>
   `;
 
-  // Alterna entre abas: Adicionar e Estudar
+  // Alterna entre abas
   document.getElementById("btn-add-tab").addEventListener("click", function() {
     document.getElementById("section-add").classList.remove("d-none");
     document.getElementById("section-study").classList.add("d-none");
@@ -104,9 +110,8 @@ function createFlashcardsInterface(subject) {
     startStudy();
   });
 
-  // Variáveis para controle de edição
   let editingMode = false;
-  let editingCardGlobalIndex = null; // Índice do flashcard no array original
+  let editingCardGlobalIndex = null;
 
   // Cadastro de flashcards
   document.getElementById("flashcard-form").addEventListener("submit", function(e) {
@@ -117,7 +122,6 @@ function createFlashcardsInterface(subject) {
     if (question && content && answer) {
       let cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
       if (editingMode) {
-        // Atualiza o flashcard existente
         cards[editingCardGlobalIndex] = { question, content, answer };
         localStorage.setItem("flashcards_" + subject, JSON.stringify(cards));
         editingMode = false;
@@ -125,7 +129,6 @@ function createFlashcardsInterface(subject) {
         document.querySelector("#flashcard-form button[type='submit']").textContent = "Salvar Flashcard";
         alert("Flashcard atualizado!");
       } else {
-        // Adiciona novo flashcard
         cards.push({ question, content, answer });
         localStorage.setItem("flashcards_" + subject, JSON.stringify(cards));
         alert("Flashcard salvo!");
@@ -139,7 +142,6 @@ function createFlashcardsInterface(subject) {
   let studyOrder = [];
   let currentIndex = 0;
   let flashcards = [];
-
   const flashcardContainer = document.getElementById("flashcard-container");
   const cardQuestion = document.getElementById("card-question");
   const cardContent = document.getElementById("card-content");
@@ -159,7 +161,7 @@ function createFlashcardsInterface(subject) {
     }
   });
 
-  // Botão Reiniciar Perguntas
+  // Botão Reiniciar
   document.getElementById("btn-restart").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -168,17 +170,22 @@ function createFlashcardsInterface(subject) {
     startStudy();
   });
 
+  // Botão Imprimir Flashcards
+  document.getElementById("btn-print").addEventListener("click", function() {
+    printFlashcards(subject);
+  });
+
   // Botão Sair
   document.getElementById("btn-exit").addEventListener("click", function() {
     location.reload();
   });
 
-  // Efeito de flip ao clicar no flashcard
+  // Efeito flip
   flashcardContainer.addEventListener("click", function() {
     flashcardContainer.classList.toggle("flipped");
   });
 
-  // Botão Editar Flashcard
+  // Botão Editar
   document.getElementById("btn-edit").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -198,7 +205,7 @@ function createFlashcardsInterface(subject) {
     }
   });
 
-  // Botão Excluir Flashcard
+  // Botão Excluir
   document.getElementById("btn-delete").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -215,7 +222,7 @@ function createFlashcardsInterface(subject) {
     }
   });
 
-  // Atualiza a exibição do flashcard: se não houver flashcards, mostra a mensagem "Crie Um Novo Flashcard" nas duas faces
+  // Se não houver flashcards, mostra mensagem nas faces do cartão
   function updateFlashcardMessage(subject) {
     const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     if (cards.length === 0) {
@@ -249,9 +256,42 @@ function createFlashcardsInterface(subject) {
       alert("Você já visualizou todos os flashcards.");
     }
   }
+
+  // Função para imprimir flashcards (8 por folha A4)
+  function printFlashcards(subject) {
+    const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
+    if (cards.length === 0) {
+      alert("NENHUM FLASHCARD CADASTRADO");
+      return;
+    }
+    let printContent = '<html><head><title>Imprimir Flashcards</title>';
+    printContent += '<style>';
+    printContent += '@page { size: A4; margin: 20mm; }';
+    printContent += 'body { font-family: Arial, sans-serif; }';
+    printContent += '.flashcard { border: 1px solid #000; padding: 10px; margin: 5px; width: calc(50% - 20px); display: inline-block; vertical-align: top; box-sizing: border-box; }';
+    printContent += '.page-break { page-break-after: always; }';
+    printContent += '</style></head><body>';
+    cards.forEach((card, index) => {
+      printContent += `<div class="flashcard">
+          <p><strong>Pergunta:</strong> ${card.question}</p>
+          <p><strong>Conteúdo:</strong> ${card.content}</p>
+          <p><strong>Resposta:</strong> ${card.answer}</p>
+      </div>`;
+      if ((index + 1) % 8 === 0 && index !== cards.length - 1) {
+        printContent += '<div class="page-break"></div>';
+      }
+    });
+    printContent += '</body></html>';
+    const printWindow = window.open('', '', 'height=842,width=595');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  }
 }
 
-// Embaralha um array (algoritmo Fisher-Yates)
+// Embaralha um array (Fisher-Yates)
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -260,7 +300,7 @@ function shuffleArray(array) {
   return array;
 }
 
-// Função para alternar o modo escuro e atualizar o header
+// Alterna o modo escuro e atualiza o header
 function toggleDarkMode() {
   document.body.classList.toggle("dark-mode");
   document.body.classList.toggle("light-mode");
@@ -272,7 +312,6 @@ function toggleDarkMode() {
     toggleDark.textContent = mode === "dark" ? "Modo Claro" : "Modo Escuro";
   }
   
-  // Atualiza o header (navbar)
   const navbar = document.querySelector('.navbar');
   if (navbar) {
     if (mode === "dark") {
