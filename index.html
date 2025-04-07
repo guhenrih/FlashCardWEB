@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flashcards Interativos</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- CSS Customizado -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="light-mode">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Flashcards App</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarContent" 
+      aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav mr-auto"></ul>
+      <span class="navbar-text toggle-btn" id="toggle-dark">Modo Escuro</span>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <!-- Seção de cadastro da matéria -->
+    <div id="subject-selection">
+      <h2>Qual matéria você deseja estudar?</h2>
+      <form id="subject-form">
+        <div class="form-group">
+          <input type="text" id="subject-input" class="form-control" placeholder="Digite o nome da matéria" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Adicionar Matéria</button>
+      </form>
+    </div>
+
+    <!-- Área para os botões de matérias já cadastradas -->
+    <div id="subject-buttons" class="mt-4">
+      <h3>Matérias Disponíveis</h3>
+      <!-- Botões serão adicionados dinamicamente -->
+    </div>
+
+    <!-- Container onde a interface dos flashcards será criada -->
+    <div id="app"></div>
+  </div>
+
+  <!-- Bootstrap JS e dependências -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- JavaScript Customizado -->
+  <script src="script.js"></script>
+</body>
+</html>
