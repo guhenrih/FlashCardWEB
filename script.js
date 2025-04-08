@@ -37,18 +37,73 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-// Adiciona um botão com o nome da matéria na página inicial
+// Retorna os conteúdos salvos (array de strings) do localStorage
+function getContentOptions() {
+  return JSON.parse(localStorage.getItem("contentOptions")) || [];
+}
+
+// Salva o array de conteúdos no localStorage
+function setContentOptions(options) {
+  localStorage.setItem("contentOptions", JSON.stringify(options));
+}
+
+// Adiciona uma nova opção de conteúdo caso ainda não esteja salva
+function addContentOption(newOption) {
+  let options = getContentOptions();
+  if (!options.includes(newOption)) {
+    options.push(newOption);
+    setContentOptions(options);
+  }
+}
+
+// Gera o HTML das opções do dropdown de conteúdos
+function getContentOptionsHtml() {
+  let options = getContentOptions();
+  let html = `<option value="" disabled selected>Selecione um conteúdo</option>`;
+  // Popula o dropdown com os conteúdos salvos
+  options.forEach(option => {
+    html += `<option value="${option}">${option}</option>`;
+  });
+  // Sempre adiciona a opção para inserir um novo conteúdo
+  html += `<option value="outro">Outro...</option>`;
+  return html;
+}
+
+// Adiciona um botão com o nome da matéria na página inicial, juntamente com um botão para excluí-la
 function addSubjectButton(subject) {
   const container = document.getElementById("subject-buttons");
+  const div = document.createElement("div");
+  div.className = "d-flex align-items-center mb-2";
+  
   const btn = document.createElement("button");
-  btn.className = "btn btn-outline-primary m-1";
+  btn.className = "btn btn-outline-primary mr-2";
   btn.textContent = subject;
   btn.addEventListener("click", function() {
     document.getElementById("subject-selection").style.display = "none";
     container.style.display = "none";
     createFlashcardsInterface(subject);
   });
-  container.appendChild(btn);
+  div.appendChild(btn);
+  
+  const delBtn = document.createElement("button");
+  delBtn.className = "btn btn-outline-danger btn-sm";
+  delBtn.textContent = "Excluir";
+  delBtn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    if (confirm("Deseja realmente excluir a matéria " + subject + "?")) {
+      // Remove do localStorage as matérias
+      let subjects = JSON.parse(localStorage.getItem("subjects")) || [];
+      subjects = subjects.filter(s => s !== subject);
+      localStorage.setItem("subjects", JSON.stringify(subjects));
+      // Remove os flashcards associados
+      localStorage.removeItem("flashcards_" + subject);
+      // Remove o elemento da interface
+      div.remove();
+    }
+  });
+  div.appendChild(delBtn);
+  
+  container.appendChild(div);
 }
 
 // Cria a interface dos flashcards dinamicamente
@@ -67,7 +122,11 @@ function createFlashcardsInterface(subject) {
           <input type="text" id="input-question" class="form-control" placeholder="Digite a pergunta" required>
         </div>
         <div class="form-group">
-          <input type="text" id="input-content" class="form-control" placeholder="Digite o conteúdo do flashcard" required>
+          <label for="input-content">Conteúdo do Flashcard</label>
+          <select id="input-content" class="form-control" required>
+            ${getContentOptionsHtml()}
+          </select>
+          <input type="text" id="input-content-other" class="form-control mt-2 d-none" placeholder="Digite o conteúdo do flashcard">
         </div>
         <div class="form-group">
           <textarea id="input-answer" class="form-control" placeholder="Digite a resposta" rows="3" required></textarea>
@@ -89,12 +148,17 @@ function createFlashcardsInterface(subject) {
             </div>
           </div>
         </div>
-        <button id="btn-edit" class="btn btn-info mt-3">Editar Flashcard</button>
-        <button id="btn-delete" class="btn btn-danger mt-3">Excluir Flashcard</button>
-        <button id="btn-next" class="btn btn-primary mt-3">Próximo</button>
-        <button id="btn-restart" class="btn btn-warning mt-3">Reiniciar Perguntas</button>
-        <button id="btn-print" class="btn btn-secondary mt-3">Imprimir Flashcards</button>
-        <button id="btn-exit" class="btn btn-secondary mt-3">Sair</button>
+        <div class="mt-3">
+          <button id="btn-edit" class="btn btn-info">Editar Flashcard</button>
+          <button id="btn-delete" class="btn btn-danger">Excluir Flashcard</button>
+          <button id="btn-restart" class="btn btn-warning">Reiniciar Perguntas</button>
+          <button id="btn-print" class="btn btn-secondary">Imprimir Flashcards</button>
+          <button id="btn-exit" class="btn btn-secondary">Sair</button>
+        </div>
+        <div class="d-flex justify-content-center mt-3 nav-buttons">
+          <button id="btn-prev" class="btn btn-primary mr-2">&larr;</button>
+          <button id="btn-next" class="btn btn-primary">&rarr;</button>
+        </div>
       </div>
     </section>
   `;
@@ -113,11 +177,24 @@ function createFlashcardsInterface(subject) {
   let editingMode = false;
   let editingCardGlobalIndex = null;
 
-  // Cadastro de flashcards
+  // Cadastro de flashcards – utiliza o dropdown dinâmico de conteúdo
   document.getElementById("flashcard-form").addEventListener("submit", function(e) {
     e.preventDefault();
     const question = document.getElementById("input-question").value.trim();
-    const content = document.getElementById("input-content").value.trim();
+    
+    // Obtém o conteúdo a partir do dropdown ou do campo “Outro”
+    const selectContent = document.getElementById("input-content");
+    let content = selectContent.value;
+    if (content === "outro") {
+      const otherContent = document.getElementById("input-content-other").value.trim();
+      if(otherContent){
+        content = otherContent;
+      } else{
+        alert("Por favor, digite o conteúdo do flashcard.");
+        return;
+      }
+    }
+    
     const answer = document.getElementById("input-answer").value.trim();
     if (question && content && answer) {
       let cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
@@ -132,9 +209,34 @@ function createFlashcardsInterface(subject) {
         cards.push({ question, content, answer });
         localStorage.setItem("flashcards_" + subject, JSON.stringify(cards));
         alert("Flashcard salvo!");
+        // Se o conteúdo inserido não estiver no dropdown, adiciona para uso futuro
+        addContentOption(content);
+        // Atualiza o dropdown de conteúdo
+        updateContentDropdown();
       }
       document.getElementById("flashcard-form").reset();
+      // Esconde o campo extra se estiver visível
+      document.getElementById("input-content-other").classList.add("d-none");
       updateFlashcardMessage(subject);
+    }
+  });
+
+  // Atualiza as opções do dropdown de conteúdo com os valores salvos
+  function updateContentDropdown() {
+    const selectContent = document.getElementById("input-content");
+    selectContent.innerHTML = getContentOptionsHtml();
+  }
+
+  // Event listener para mostrar/ocultar o campo “Outro...” do conteúdo
+  document.getElementById("input-content").addEventListener("change", function(){
+    const select = document.getElementById("input-content");
+    const otherInput = document.getElementById("input-content-other");
+    if(select.value === "outro"){
+      otherInput.classList.remove("d-none");
+      otherInput.required = true;
+    } else{
+      otherInput.classList.add("d-none");
+      otherInput.required = false;
     }
   });
 
@@ -147,7 +249,7 @@ function createFlashcardsInterface(subject) {
   const cardContent = document.getElementById("card-content");
   const cardAnswer = document.getElementById("card-answer");
 
-  // Botão Próximo
+  // Botão Próximo (seta →)
   document.getElementById("btn-next").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -161,6 +263,20 @@ function createFlashcardsInterface(subject) {
     }
   });
 
+  // Botão Retroceder (seta ←)
+  document.getElementById("btn-prev").addEventListener("click", function() {
+    if (!flashcards || flashcards.length === 0) {
+      alert("NENHUM FLASHCARD CADASTRADO");
+      return;
+    }
+    if (currentIndex > 0) {
+      currentIndex--;
+      displayCurrentCard();
+    } else {
+      alert("Você está no primeiro flashcard.");
+    }
+  });
+
   // Botão Reiniciar
   document.getElementById("btn-restart").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
@@ -170,8 +286,7 @@ function createFlashcardsInterface(subject) {
     startStudy();
   });
 
-  // Botão Imprimir Flashcards - layout modificado para dois retângulos (apenas conteúdo)
-  // com 8 pares por folha A4, em grid de 4 colunas (4 x 2 = 8 pares por página)
+  // Botão Imprimir Flashcards – layout modificado para exibir 8 pares por página, com quebra de página ajustada
   document.getElementById("btn-print").addEventListener("click", function() {
     printFlashcards(subject);
   });
@@ -198,7 +313,25 @@ function createFlashcardsInterface(subject) {
       document.getElementById("section-add").classList.remove("d-none");
       document.getElementById("section-study").classList.add("d-none");
       document.getElementById("input-question").value = currentCard.question;
-      document.getElementById("input-content").value = currentCard.content;
+      
+      // Para o conteúdo, se o valor bater com alguma opção, seta o select; caso contrário, seta “Outro…” e preenche o campo
+      const selectContent = document.getElementById("input-content");
+      const otherInput = document.getElementById("input-content-other");
+      let optionFound = false;
+      for (let i = 0; i < selectContent.options.length; i++) {
+        if (selectContent.options[i].value === currentCard.content) {
+          selectContent.value = currentCard.content;
+          optionFound = true;
+          otherInput.classList.add("d-none");
+          break;
+        }
+      }
+      if (!optionFound) {
+        selectContent.value = "outro";
+        otherInput.classList.remove("d-none");
+        otherInput.value = currentCard.content;
+      }
+      
       document.getElementById("input-answer").value = currentCard.answer;
       editingMode = true;
       editingCardGlobalIndex = idx;
@@ -206,7 +339,7 @@ function createFlashcardsInterface(subject) {
     }
   });
 
-  // Botão Excluir
+  // Botão Excluir Flashcard
   document.getElementById("btn-delete").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -258,8 +391,7 @@ function createFlashcardsInterface(subject) {
     }
   }
 
-  // Função para imprimir flashcards com dois retângulos (apenas conteúdo)
-  // em grid de 4 colunas (8 pares por página) – garantindo que a altura seja maior que a largura.
+  // Função para imprimir flashcards com 8 pares por página, utilizando grid de 4 colunas (4 x 2 = 8 pares)
   function printFlashcards(subject) {
     const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     if (cards.length === 0) {
@@ -272,7 +404,6 @@ function createFlashcardsInterface(subject) {
       @page { size: A4; margin: 20mm; }
       body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
       h1 { text-align: center; margin-bottom: 20px; }
-      /* Grade com 4 colunas: 4 x 2 = 8 pares por folha */
       .flashcards-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -290,7 +421,6 @@ function createFlashcardsInterface(subject) {
         border: 1px solid #000;
         padding: 5px;
         margin-bottom: 5px;
-        /* Altura fixa ajustada para caber 8 pares por folha */
         height: 200px;
         display: flex;
         align-items: center;
@@ -315,8 +445,8 @@ function createFlashcardsInterface(subject) {
           <div class="flashcard-rect">${card.answer}</div>
         </div>
       `;
-      // Insere quebra de página após cada 8 pares (4 colunas x 2 linhas)
-      if ((index + 1) % 8 === 0 && index !== cards.length - 1) {
+      // Insere quebra de página após cada 8 pares, se houver mais flashcards
+      if ((index + 1) % 8 === 0 && (index + 1) < cards.length) {
         printContent += '</div><div class="page-break"></div><div class="flashcards-grid">';
       }
     });

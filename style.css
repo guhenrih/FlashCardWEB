@@ -71,7 +71,12 @@ body.dark-mode .flashcard-front {
   text-align: center;
   font-size: 0.9em;
 }
-  
+
+/* Estilo para os botões de navegação dos flashcards */
+.nav-buttons button {
+  min-width: 50px;
+}
+
 /* Media queries para telas maiores */
 @media (min-width: 768px) {
   .flashcard {
