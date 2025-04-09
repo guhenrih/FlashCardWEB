@@ -77,6 +77,27 @@ body.dark-mode .flashcard-front {
   min-width: 50px;
 }
 
+
+#btn-edit {
+  margin: 10px;
+}
+
+#btn-delete {
+  margin: 10px;
+}
+
+#btn-restart {
+  margin: 10px;
+}
+
+#btn-print {
+  margin: 10px;
+}
+
+#tn-exit {
+  margin: 10px;
+}
+
 /* Media queries para telas maiores */
 @media (min-width: 768px) {
   .flashcard {

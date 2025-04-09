@@ -423,12 +423,21 @@ function createFlashcardsInterface(subject) {
         margin-bottom: 5px;
         height: 200px;
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
+        align-items: center;
         text-align: center;
       }
       .flashcard-rect:last-child {
         margin-bottom: 0;
+      }
+      /* Estilo adicional para exibir o conteúdo abaixo da pergunta */
+      .print-question {
+        font-weight: bold;
+      }
+      .print-content {
+        font-size: 0.9em;
+        margin-top: 5px;
       }
       .page-break { 
         display: block; 
@@ -441,7 +450,10 @@ function createFlashcardsInterface(subject) {
     cards.forEach((card, index) => {
       printContent += `
         <div class="flashcard-pair">
-          <div class="flashcard-rect">${card.question}</div>
+          <div class="flashcard-rect">
+            <div class="print-question">${card.question}</div>
+            <div class="print-content">${card.content}</div>
+          </div>
           <div class="flashcard-rect">${card.answer}</div>
         </div>
       `;
