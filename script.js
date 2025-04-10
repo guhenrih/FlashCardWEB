@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", function() {
   const subjects = JSON.parse(localStorage.getItem("subjects")) || [];
   subjects.forEach(subject => addSubjectButton(subject));
 
+  // Renderiza a lista de conteúdos para exclusão/gerenciamento (na página inicial)
+  renderContentManagement();
+
   // Cadastro de nova matéria
   const subjectForm = document.getElementById("subject-form");
   if (subjectForm) {
@@ -37,39 +40,90 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-// Retorna os conteúdos salvos (array de strings) do localStorage
+// Funções de gerenciamento de opções de conteúdo
 function getContentOptions() {
   return JSON.parse(localStorage.getItem("contentOptions")) || [];
 }
-
-// Salva o array de conteúdos no localStorage
 function setContentOptions(options) {
   localStorage.setItem("contentOptions", JSON.stringify(options));
 }
-
-// Adiciona uma nova opção de conteúdo caso ainda não esteja salva
 function addContentOption(newOption) {
   let options = getContentOptions();
   if (!options.includes(newOption)) {
     options.push(newOption);
     setContentOptions(options);
+    renderContentManagement();
+    updateContentDropdown();
+    updateFilterDropdown();
   }
 }
 
-// Gera o HTML das opções do dropdown de conteúdos
+// Gera o HTML das opções do dropdown para cadastro (inclui "Outro...")
 function getContentOptionsHtml() {
   let options = getContentOptions();
   let html = `<option value="" disabled selected>Selecione um conteúdo</option>`;
-  // Popula o dropdown com os conteúdos salvos
   options.forEach(option => {
     html += `<option value="${option}">${option}</option>`;
   });
-  // Sempre adiciona a opção para inserir um novo conteúdo
   html += `<option value="outro">Outro...</option>`;
   return html;
 }
 
-// Adiciona um botão com o nome da matéria na página inicial, juntamente com um botão para excluí-la
+// Gera as opções para o dropdown de filtro (sem a opção "Outro...")
+function getContentOptionsHtmlFilter() {
+  let options = getContentOptions();
+  let html = "";
+  options.forEach(option => {
+    html += `<option value="${option}">${option}</option>`;
+  });
+  return html;
+}
+
+// Renderiza a seção de gerenciamento de conteúdos na página inicial
+function renderContentManagement() {
+  const contentList = document.getElementById("content-list");
+  if (!contentList) return;
+  contentList.innerHTML = "";
+  const options = getContentOptions();
+  options.forEach(option => {
+     const li = document.createElement("li");
+     li.className = "list-group-item d-flex justify-content-between align-items-center";
+     li.textContent = option;
+     const btnDelete = document.createElement("button");
+     btnDelete.className = "btn btn-danger btn-sm";
+     btnDelete.textContent = "Excluir";
+     btnDelete.addEventListener("click", function() {
+         if (confirm("Deseja excluir o conteúdo '" + option + "'? Essa ação não afetará os flashcards já criados.")) {
+            let opts = getContentOptions();
+            opts = opts.filter(o => o !== option);
+            setContentOptions(opts);
+            renderContentManagement();
+            updateContentDropdown();
+            updateFilterDropdown();
+         }
+     });
+     li.appendChild(btnDelete);
+     contentList.appendChild(li);
+  });
+}
+
+// Atualiza o dropdown de conteúdos na área de cadastro de flashcards
+function updateContentDropdown() {
+  const selectContent = document.getElementById("input-content");
+  if (selectContent) {
+    selectContent.innerHTML = getContentOptionsHtml();
+  }
+}
+
+// Atualiza o dropdown de filtro na área de estudo
+function updateFilterDropdown() {
+  const filterSelect = document.getElementById("filter-content");
+  if (filterSelect) {
+    filterSelect.innerHTML = `<option value="all">Todos</option>` + getContentOptionsHtmlFilter();
+  }
+}
+
+// Adiciona um botão com o nome da matéria na página inicial, com opção de exclusão
 function addSubjectButton(subject) {
   const container = document.getElementById("subject-buttons");
   const div = document.createElement("div");
@@ -91,13 +145,10 @@ function addSubjectButton(subject) {
   delBtn.addEventListener("click", function(e) {
     e.stopPropagation();
     if (confirm("Deseja realmente excluir a matéria " + subject + "?")) {
-      // Remove do localStorage as matérias
       let subjects = JSON.parse(localStorage.getItem("subjects")) || [];
       subjects = subjects.filter(s => s !== subject);
       localStorage.setItem("subjects", JSON.stringify(subjects));
-      // Remove os flashcards associados
       localStorage.removeItem("flashcards_" + subject);
-      // Remove o elemento da interface
       div.remove();
     }
   });
@@ -114,6 +165,7 @@ function createFlashcardsInterface(subject) {
     <nav class="mb-3">
       <button id="btn-add-tab" class="btn btn-primary">Adicionar Flashcards</button>
       <button id="btn-study-tab" class="btn btn-secondary">Estudar Flashcards</button>
+      <button id="btn-manage-content" class="btn btn-info">Gerenciar Conteúdo</button>
     </nav>
     <section id="section-add">
       <h4>Adicionar Flashcard</h4>
@@ -134,10 +186,16 @@ function createFlashcardsInterface(subject) {
         <button type="submit" class="btn btn-success">Salvar Flashcard</button>
       </form>
       <hr>
-      <!-- Novo quadrado exibindo o número de flashcards cadastrados para a matéria -->
       <div id="flashcards-counter" class="flashcards-counter"></div>
     </section>
     <section id="section-study" class="d-none">
+      <div class="form-group">
+        <label for="filter-content">Filtrar por Conteúdo</label>
+        <select id="filter-content" class="form-control">
+          <option value="all">Todos</option>
+          ${getContentOptionsHtmlFilter()}
+        </select>
+      </div>
       <div class="text-center">
         <div id="flashcard-container" class="flashcard">
           <div class="flashcard-inner">
@@ -163,34 +221,48 @@ function createFlashcardsInterface(subject) {
         </div>
       </div>
     </section>
+    <section id="section-manage-content" class="d-none">
+      <h4>Gerenciar Conteúdo</h4>
+      <ul id="content-list-flashcards" class="list-group"></ul>
+      <button id="btn-back-from-manage" class="btn btn-secondary mt-2">Voltar</button>
+    </section>
   `;
 
-  // Define a área de adicionar flashcards como posicionado relativamente para que o contador seja posicionado corretamente
-  document.getElementById("section-add").style.position = "relative";
-
-  // Atualiza o contador de flashcards logo ao criar a interface
+  // Atualiza o contador de flashcards e o dropdown de filtro
   updateFlashcardsCounter(subject);
+  updateFilterDropdown();
 
-  // Alterna entre abas
+  // Alterna entre seções de cadastro, estudo e gerenciamento de conteúdos
   document.getElementById("btn-add-tab").addEventListener("click", function() {
     document.getElementById("section-add").classList.remove("d-none");
     document.getElementById("section-study").classList.add("d-none");
+    document.getElementById("section-manage-content").classList.add("d-none");
   });
   document.getElementById("btn-study-tab").addEventListener("click", function() {
     document.getElementById("section-add").classList.add("d-none");
     document.getElementById("section-study").classList.remove("d-none");
+    document.getElementById("section-manage-content").classList.add("d-none");
     startStudy();
+  });
+  document.getElementById("btn-manage-content").addEventListener("click", function() {
+    document.getElementById("section-add").classList.add("d-none");
+    document.getElementById("section-study").classList.add("d-none");
+    document.getElementById("section-manage-content").classList.remove("d-none");
+    renderContentManagementFlashcards();
+  });
+  document.getElementById("btn-back-from-manage").addEventListener("click", function() {
+    // Por padrão, volta para a aba de Adicionar Flashcards
+    document.getElementById("section-manage-content").classList.add("d-none");
+    document.getElementById("section-add").classList.remove("d-none");
   });
 
   let editingMode = false;
   let editingCardGlobalIndex = null;
 
-  // Cadastro de flashcards – utiliza o dropdown dinâmico de conteúdo
+  // Cadastro de flashcards
   document.getElementById("flashcard-form").addEventListener("submit", function(e) {
     e.preventDefault();
     const question = document.getElementById("input-question").value.trim();
-    
-    // Obtém o conteúdo a partir do dropdown ou do campo “Outro”
     const selectContent = document.getElementById("input-content");
     let content = selectContent.value;
     if (content === "outro") {
@@ -202,7 +274,6 @@ function createFlashcardsInterface(subject) {
         return;
       }
     }
-    
     const answer = document.getElementById("input-answer").value.trim();
     if (question && content && answer) {
       let cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
@@ -217,27 +288,16 @@ function createFlashcardsInterface(subject) {
         cards.push({ question, content, answer });
         localStorage.setItem("flashcards_" + subject, JSON.stringify(cards));
         alert("Flashcard salvo!");
-        // Se o conteúdo inserido não estiver no dropdown, adiciona para uso futuro
         addContentOption(content);
-        // Atualiza o dropdown de conteúdo
         updateContentDropdown();
+        updateFilterDropdown();
       }
       document.getElementById("flashcard-form").reset();
-      // Esconde o campo extra se estiver visível
       document.getElementById("input-content-other").classList.add("d-none");
-      // Atualiza o contador após salvar
       updateFlashcardsCounter(subject);
       updateFlashcardMessage(subject);
     }
   });
-
-  // Atualiza as opções do dropdown de conteúdo com os valores salvos
-  function updateContentDropdown() {
-    const selectContent = document.getElementById("input-content");
-    selectContent.innerHTML = getContentOptionsHtml();
-  }
-
-  // Event listener para mostrar/ocultar o campo “Outro...” do conteúdo
   document.getElementById("input-content").addEventListener("change", function(){
     const select = document.getElementById("input-content");
     const otherInput = document.getElementById("input-content-other");
@@ -250,7 +310,7 @@ function createFlashcardsInterface(subject) {
     }
   });
 
-  // Variáveis do modo de estudo
+  // Variáveis para o modo de estudo
   let studyOrder = [];
   let currentIndex = 0;
   let flashcards = [];
@@ -259,7 +319,7 @@ function createFlashcardsInterface(subject) {
   const cardContent = document.getElementById("card-content");
   const cardAnswer = document.getElementById("card-answer");
 
-  // Botão Próximo (seta →)
+  // Navegação dos flashcards
   document.getElementById("btn-next").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -272,8 +332,6 @@ function createFlashcardsInterface(subject) {
       alert("Você chegou ao final dos flashcards. Clique em Reiniciar para começar de novo.");
     }
   });
-
-  // Botão Retroceder (seta ←)
   document.getElementById("btn-prev").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -286,8 +344,6 @@ function createFlashcardsInterface(subject) {
       alert("Você está no primeiro flashcard.");
     }
   });
-
-  // Botão Reiniciar
   document.getElementById("btn-restart").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -295,23 +351,15 @@ function createFlashcardsInterface(subject) {
     }
     startStudy();
   });
-
-  // Botão Imprimir Flashcards – layout modificado para exibir 8 pares por página, com quebra de página ajustada
   document.getElementById("btn-print").addEventListener("click", function() {
     printFlashcards(subject);
   });
-
-  // Botão Sair
   document.getElementById("btn-exit").addEventListener("click", function() {
     location.reload();
   });
-
-  // Efeito flip
   flashcardContainer.addEventListener("click", function() {
     flashcardContainer.classList.toggle("flipped");
   });
-
-  // Botão Editar
   document.getElementById("btn-edit").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -323,8 +371,6 @@ function createFlashcardsInterface(subject) {
       document.getElementById("section-add").classList.remove("d-none");
       document.getElementById("section-study").classList.add("d-none");
       document.getElementById("input-question").value = currentCard.question;
-      
-      // Para o conteúdo, se o valor bater com alguma opção, seta o select; caso contrário, seta “Outro…” e preenche o campo
       const selectContent = document.getElementById("input-content");
       const otherInput = document.getElementById("input-content-other");
       let optionFound = false;
@@ -341,15 +387,12 @@ function createFlashcardsInterface(subject) {
         otherInput.classList.remove("d-none");
         otherInput.value = currentCard.content;
       }
-      
       document.getElementById("input-answer").value = currentCard.answer;
       editingMode = true;
       editingCardGlobalIndex = idx;
       document.querySelector("#flashcard-form button[type='submit']").textContent = "Atualizar Flashcard";
     }
   });
-
-  // Botão Excluir Flashcard
   document.getElementById("btn-delete").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -361,14 +404,12 @@ function createFlashcardsInterface(subject) {
         flashcards.splice(idx, 1);
         localStorage.setItem("flashcards_" + subject, JSON.stringify(flashcards));
         alert("Flashcard excluído!");
-        // Atualiza o contador após exclusão
         updateFlashcardsCounter(subject);
         startStudy();
       }
     }
   });
 
-  // Se não houver flashcards, mostra mensagem nas faces do cartão
   function updateFlashcardMessage(subject) {
     const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     if (cards.length === 0) {
@@ -378,9 +419,13 @@ function createFlashcardsInterface(subject) {
     }
   }
 
-  // Inicia o modo de estudo
+  // Inicia o modo de estudo aplicando o filtro se selecionado
   function startStudy() {
     flashcards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
+    const filterValue = document.getElementById("filter-content").value;
+    if(filterValue !== "all"){
+      flashcards = flashcards.filter(card => card.content === filterValue);
+    }
     updateFlashcardMessage(subject);
     if (flashcards.length === 0) {
       return;
@@ -389,8 +434,6 @@ function createFlashcardsInterface(subject) {
     currentIndex = 0;
     displayCurrentCard();
   }
-
-  // Exibe o flashcard atual
   function displayCurrentCard() {
     flashcardContainer.classList.remove("flipped");
     if (currentIndex < studyOrder.length) {
@@ -402,8 +445,6 @@ function createFlashcardsInterface(subject) {
       alert("Você já visualizou todos os flashcards.");
     }
   }
-
-  // Função para imprimir flashcards com 8 pares por página, utilizando grid de 4 colunas (4 x 2 = 8 pares)
   function printFlashcards(subject) {
     const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     if (cards.length === 0) {
@@ -427,7 +468,6 @@ function createFlashcardsInterface(subject) {
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        width: 100%;
       }
       .flashcard-rect {
         border: 1px solid #000;
@@ -443,7 +483,6 @@ function createFlashcardsInterface(subject) {
       .flashcard-rect:last-child {
         margin-bottom: 0;
       }
-      /* Estilo adicional para exibir o conteúdo abaixo da pergunta */
       .print-question {
         font-weight: bold;
       }
@@ -469,7 +508,6 @@ function createFlashcardsInterface(subject) {
           <div class="flashcard-rect">${card.answer}</div>
         </div>
       `;
-      // Insere quebra de página após cada 8 pares, se houver mais flashcards
       if ((index + 1) % 8 === 0 && (index + 1) < cards.length) {
         printContent += '</div><div class="page-break"></div><div class="flashcards-grid">';
       }
@@ -486,7 +524,35 @@ function createFlashcardsInterface(subject) {
   }
 }
 
-// Embaralha um array (Fisher-Yates)
+// Renderiza a área de gerenciamento de conteúdos dentro da interface dos flashcards
+function renderContentManagementFlashcards() {
+  const list = document.getElementById("content-list-flashcards");
+  if (!list) return;
+  list.innerHTML = "";
+  const options = getContentOptions();
+  options.forEach(option => {
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    li.textContent = option;
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "btn btn-danger btn-sm";
+    btnDelete.textContent = "Excluir";
+    btnDelete.addEventListener("click", function(){
+      if (confirm("Deseja excluir o conteúdo '" + option + "'? Esta ação não afetará os flashcards já criados.")) {
+        let opts = getContentOptions();
+        opts = opts.filter(o => o !== option);
+        setContentOptions(opts);
+        renderContentManagementFlashcards();
+        updateContentDropdown();
+        updateFilterDropdown();
+      }
+    });
+    li.appendChild(btnDelete);
+    list.appendChild(li);
+  });
+}
+
+// Função para embaralhar array (Fisher-Yates)
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -495,7 +561,6 @@ function shuffleArray(array) {
   return array;
 }
 
-// Atualiza o quadrado com o número de flashcards cadastrados para a matéria
 function updateFlashcardsCounter(subject) {
   const counterDiv = document.getElementById("flashcards-counter");
   if (counterDiv) {
@@ -504,7 +569,6 @@ function updateFlashcardsCounter(subject) {
   }
 }
 
-// Alterna o modo escuro e atualiza o header
 function toggleDarkMode() {
   document.body.classList.toggle("dark-mode");
   document.body.classList.toggle("light-mode");
@@ -527,7 +591,6 @@ function toggleDarkMode() {
     }
   }
 }
-
 function loadTheme() {
   const savedTheme = localStorage.getItem("theme") || "light";
   const toggleDark = document.getElementById("toggle-dark");

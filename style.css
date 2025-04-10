@@ -5,17 +5,17 @@ body.light-mode {
   background-color: #f8f9fa;
   color: #212529;
 }
-  
+
 body.dark-mode {
   background-color: #212529;
   color: #007bff;
 }
-  
+
 /* Navbar e container centralizados */
 .navbar, .container {
   margin: 0 auto;
 }
-  
+
 /* Estilo dos Flashcards na interface do app */
 .flashcard {
   perspective: 1000px;
@@ -62,7 +62,7 @@ body.dark-mode .flashcard-front {
   color: #ffffff;
   transform: rotateY(180deg);
 }
-  
+
 /* Estilo para o conteúdo extra no flashcard */
 .flashcard-extra {
   position: absolute;
@@ -77,68 +77,15 @@ body.dark-mode .flashcard-front {
   min-width: 50px;
 }
 
-#btn-edit {
+#btn-edit,
+#btn-delete,
+#btn-restart,
+#btn-print,
+#btn-exit {
   margin: 10px;
 }
 
-#btn-delete {
-  margin: 10px;
-}
-
-#btn-restart {
-  margin: 10px;
-}
-
-#btn-print {
-  margin: 10px;
-}
-
-#tn-exit {
-  margin: 10px;
-}
-
-/* Novo estilo para o contador de flashcards na área de adicionar */
-#section-add {
-  position: relative;
-}
-.flashcards-counter {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  width: 40px;
-  height: 40px;
-  border: 1px solid #ccc;
-  background-color: #f1f1f1;
-  text-align: center;
-  line-height: 40px;
-  font-weight: bold;
-  border-radius: 4px;
-}
-
-/* Media queries para telas maiores */
-@media (min-width: 768px) {
-  .flashcard {
-    max-width: 400px;
-  }
-  .flashcard-inner {
-    height: 250px;
-  }
-}
-
-/* Flashcards maiores para telas pequenas */
-@media (max-width: 576px) {
-  .flashcard {
-    max-width: 90%;
-  }
-  .flashcard-inner {
-    height: 250px;
-  }
-}
-
-/* Novo estilo para o contador de flashcards na área de adicionar */
-#section-add {
-  position: relative;
-}
+/* Estilo para o contador de flashcards */
 .flashcards-counter {
   position: absolute;
   bottom: 10px;
@@ -154,26 +101,77 @@ body.dark-mode .flashcard-front {
   font-size: 1em;
 }
 
-/* Ajusta a seção de adicionar flashcards para reservar espaço para o contador */
+/* Ajusta a seção de adicionar flashcards para evitar sobreposição do contador */
 #section-add {
   position: relative;
-  padding-bottom: 60px; /* Espaço extra para evitar sobreposição */
+  padding-bottom: 60px;
 }
 
-/* Novo estilo para o contador de flashcards na área de adicionar */
-.flashcards-counter {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  width: 40px;
-  height: 40px;
+/* Estilos para a seção de gerenciamento de conteúdos (na página inicial e na interface dos flashcards) */
+#content-management,
+#section-manage-content {
+  margin-top: 20px;
+  padding: 15px;
   border: 1px solid #ccc;
-  background-color: #f1f1f1;
-  text-align: center;
-  line-height: 40px;
-  font-weight: bold;
-  border-radius: 4px;
-  font-size: 1em;
+  border-radius: 5px;
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+body.dark-mode #content-management,
+body.dark-mode #section-manage-content {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid #495057;
+}
+
+/* Estilos para os itens da lista de conteúdos */
+.list-group-item {
+  border: 1px solid #ccc;
+}
+
+body.dark-mode .list-group-item {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid #495057;
+}
+
+/* Estilos para os dropdowns de seleção e filtro */
+select.form-control {
+  background-color: #ffffff;
+  color: #212529;
+  border: 1px solid #ccc;
+}
+
+body.dark-mode select.form-control {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid #495057;
+}
+
+/* NOVO: Estilos para os campos de entrada de texto e textarea para se adaptarem ao modo escuro/claro */
+input.form-control,
+textarea.form-control {
+  background-color: #ffffff;
+  color: #212529;
+  border: 1px solid #ccc;
+}
+
+body.dark-mode input.form-control,
+body.dark-mode textarea.form-control {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid #495057;
+}
+
+/* Estilo do botão Gerenciar Conteúdo (na área dos flashcards) */
+#btn-manage-content {
+  margin-left: 10px;
+}
+body.dark-mode #btn-manage-content {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
 }
 
 /* Responsividade para telas menores */
@@ -197,6 +195,61 @@ body.dark-mode .flashcard-front {
     left: 8px;
     line-height: 35px;
     font-size: 0.9em;
+  }
+}
+
+/* Media queries para telas maiores */
+@media (min-width: 768px) {
+  .flashcard {
+    max-width: 400px;
+  }
+  .flashcard-inner {
+    height: 250px;
+  }
+}
+
+/* Estilo do botão Gerenciar Conteúdo (na área dos flashcards) */
+#btn-manage-content {
+  margin-left: 10px;
+}
+
+/* Modo escuro para o botão Gerenciar Conteúdo */
+body.dark-mode #btn-manage-content {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+}
+
+/* Responsividade para o botão Gerenciar Conteúdo */
+@media (max-width: 768px) {
+  /* Em telas até 768px, permite que os botões se agrupem em duas linhas, se necessário */
+  nav.mb-3 {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  /* Ajusta o botão para ocupar uma largura adequada e centralizar se necessário */
+  #btn-manage-content {
+    margin-left: 0;
+    margin-top: 10px;
+    flex: 1 1 auto;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 576px) {
+  /* Em telas ainda menores, força uma disposição em coluna se necessário */
+  nav.mb-3 {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  /* Ajusta o botão para ocupar 100% da largura do contêiner com espaçamento adequado */
+  #btn-manage-content {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 10px;
   }
 }
 
