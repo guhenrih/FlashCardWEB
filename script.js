@@ -44,9 +44,11 @@ document.addEventListener("DOMContentLoaded", function() {
 function getContentOptions() {
   return JSON.parse(localStorage.getItem("contentOptions")) || [];
 }
+
 function setContentOptions(options) {
   localStorage.setItem("contentOptions", JSON.stringify(options));
 }
+
 function addContentOption(newOption) {
   let options = getContentOptions();
   if (!options.includes(newOption)) {
@@ -86,24 +88,24 @@ function renderContentManagement() {
   contentList.innerHTML = "";
   const options = getContentOptions();
   options.forEach(option => {
-     const li = document.createElement("li");
-     li.className = "list-group-item d-flex justify-content-between align-items-center";
-     li.textContent = option;
-     const btnDelete = document.createElement("button");
-     btnDelete.className = "btn btn-danger btn-sm";
-     btnDelete.textContent = "Excluir";
-     btnDelete.addEventListener("click", function() {
-         if (confirm("Deseja excluir o conteúdo '" + option + "'? Essa ação não afetará os flashcards já criados.")) {
-            let opts = getContentOptions();
-            opts = opts.filter(o => o !== option);
-            setContentOptions(opts);
-            renderContentManagement();
-            updateContentDropdown();
-            updateFilterDropdown();
-         }
-     });
-     li.appendChild(btnDelete);
-     contentList.appendChild(li);
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    li.textContent = option;
+    const btnDelete = document.createElement("button");
+    btnDelete.className = "btn btn-danger btn-sm";
+    btnDelete.textContent = "Excluir";
+    btnDelete.addEventListener("click", function() {
+      if (confirm("Deseja excluir o conteúdo '" + option + "'? Essa ação não afetará os flashcards já criados.")) {
+        let opts = getContentOptions();
+        opts = opts.filter(o => o !== option);
+        setContentOptions(opts);
+        renderContentManagement();
+        updateContentDropdown();
+        updateFilterDropdown();
+      }
+    });
+    li.appendChild(btnDelete);
+    contentList.appendChild(li);
   });
 }
 
@@ -115,11 +117,14 @@ function updateContentDropdown() {
   }
 }
 
-// Atualiza o dropdown de filtro na área de estudo
+// Atualiza o dropdown de filtro na área de estudo, preservando a seleção atual
 function updateFilterDropdown() {
   const filterSelect = document.getElementById("filter-content");
   if (filterSelect) {
+    const currentVal = filterSelect.value; // Preserva o valor atual
     filterSelect.innerHTML = `<option value="all">Todos</option>` + getContentOptionsHtmlFilter();
+    const optionExists = Array.from(filterSelect.options).some(option => option.value === currentVal);
+    filterSelect.value = optionExists ? currentVal : "all";
   }
 }
 
@@ -191,10 +196,15 @@ function createFlashcardsInterface(subject) {
     <section id="section-study" class="d-none">
       <div class="form-group">
         <label for="filter-content">Filtrar por Conteúdo</label>
-        <select id="filter-content" class="form-control">
-          <option value="all">Todos</option>
-          ${getContentOptionsHtmlFilter()}
-        </select>
+        <div class="input-group">
+          <select id="filter-content" class="form-control">
+            <option value="all">Todos</option>
+            ${getContentOptionsHtmlFilter()}
+          </select>
+          <div class="input-group-append">
+            <button id="btn-search-filter" class="btn btn-secondary" type="button">🔍</button>
+          </div>
+        </div>
       </div>
       <div class="text-center">
         <div id="flashcard-container" class="flashcard">
@@ -228,30 +238,31 @@ function createFlashcardsInterface(subject) {
     </section>
   `;
 
-  // Atualiza o contador de flashcards e o dropdown de filtro
   updateFlashcardsCounter(subject);
   updateFilterDropdown();
 
-  // Alterna entre seções de cadastro, estudo e gerenciamento de conteúdos
+  // Alterna entre as seções: adicionar, estudar e gerenciar conteúdos
   document.getElementById("btn-add-tab").addEventListener("click", function() {
     document.getElementById("section-add").classList.remove("d-none");
     document.getElementById("section-study").classList.add("d-none");
     document.getElementById("section-manage-content").classList.add("d-none");
   });
+  
   document.getElementById("btn-study-tab").addEventListener("click", function() {
     document.getElementById("section-add").classList.add("d-none");
     document.getElementById("section-study").classList.remove("d-none");
     document.getElementById("section-manage-content").classList.add("d-none");
     startStudy();
   });
+  
   document.getElementById("btn-manage-content").addEventListener("click", function() {
     document.getElementById("section-add").classList.add("d-none");
     document.getElementById("section-study").classList.add("d-none");
     document.getElementById("section-manage-content").classList.remove("d-none");
     renderContentManagementFlashcards();
   });
+  
   document.getElementById("btn-back-from-manage").addEventListener("click", function() {
-    // Por padrão, volta para a aba de Adicionar Flashcards
     document.getElementById("section-manage-content").classList.add("d-none");
     document.getElementById("section-add").classList.remove("d-none");
   });
@@ -298,6 +309,8 @@ function createFlashcardsInterface(subject) {
       updateFlashcardMessage(subject);
     }
   });
+
+  // Mostra ou esconde o campo "Outro..."
   document.getElementById("input-content").addEventListener("change", function(){
     const select = document.getElementById("input-content");
     const otherInput = document.getElementById("input-content-other");
@@ -308,6 +321,11 @@ function createFlashcardsInterface(subject) {
       otherInput.classList.add("d-none");
       otherInput.required = false;
     }
+  });
+
+  // Evento do botão de pesquisa no filtro (lupa)
+  document.getElementById("btn-search-filter").addEventListener("click", function() {
+    startStudy();
   });
 
   // Variáveis para o modo de estudo
@@ -332,6 +350,7 @@ function createFlashcardsInterface(subject) {
       alert("Você chegou ao final dos flashcards. Clique em Reiniciar para começar de novo.");
     }
   });
+  
   document.getElementById("btn-prev").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -344,6 +363,7 @@ function createFlashcardsInterface(subject) {
       alert("Você está no primeiro flashcard.");
     }
   });
+  
   document.getElementById("btn-restart").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -351,15 +371,19 @@ function createFlashcardsInterface(subject) {
     }
     startStudy();
   });
+  
   document.getElementById("btn-print").addEventListener("click", function() {
     printFlashcards(subject);
   });
+  
   document.getElementById("btn-exit").addEventListener("click", function() {
     location.reload();
   });
+  
   flashcardContainer.addEventListener("click", function() {
     flashcardContainer.classList.toggle("flipped");
   });
+  
   document.getElementById("btn-edit").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -393,6 +417,7 @@ function createFlashcardsInterface(subject) {
       document.querySelector("#flashcard-form button[type='submit']").textContent = "Atualizar Flashcard";
     }
   });
+  
   document.getElementById("btn-delete").addEventListener("click", function() {
     if (!flashcards || flashcards.length === 0) {
       alert("NENHUM FLASHCARD CADASTRADO");
@@ -419,7 +444,7 @@ function createFlashcardsInterface(subject) {
     }
   }
 
-  // Inicia o modo de estudo aplicando o filtro se selecionado
+  // Inicia o modo de estudo aplicando o filtro selecionado
   function startStudy() {
     flashcards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     const filterValue = document.getElementById("filter-content").value;
@@ -434,6 +459,7 @@ function createFlashcardsInterface(subject) {
     currentIndex = 0;
     displayCurrentCard();
   }
+
   function displayCurrentCard() {
     flashcardContainer.classList.remove("flipped");
     if (currentIndex < studyOrder.length) {
@@ -445,6 +471,7 @@ function createFlashcardsInterface(subject) {
       alert("Você já visualizou todos os flashcards.");
     }
   }
+
   function printFlashcards(subject) {
     const cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     if (cards.length === 0) {
@@ -591,6 +618,7 @@ function toggleDarkMode() {
     }
   }
 }
+
 function loadTheme() {
   const savedTheme = localStorage.getItem("theme") || "light";
   const toggleDark = document.getElementById("toggle-dark");
