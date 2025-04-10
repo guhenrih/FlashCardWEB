@@ -134,6 +134,8 @@ function createFlashcardsInterface(subject) {
         <button type="submit" class="btn btn-success">Salvar Flashcard</button>
       </form>
       <hr>
+      <!-- Novo quadrado exibindo o número de flashcards cadastrados para a matéria -->
+      <div id="flashcards-counter" class="flashcards-counter"></div>
     </section>
     <section id="section-study" class="d-none">
       <div class="text-center">
@@ -162,6 +164,12 @@ function createFlashcardsInterface(subject) {
       </div>
     </section>
   `;
+
+  // Define a área de adicionar flashcards como posicionado relativamente para que o contador seja posicionado corretamente
+  document.getElementById("section-add").style.position = "relative";
+
+  // Atualiza o contador de flashcards logo ao criar a interface
+  updateFlashcardsCounter(subject);
 
   // Alterna entre abas
   document.getElementById("btn-add-tab").addEventListener("click", function() {
@@ -217,6 +225,8 @@ function createFlashcardsInterface(subject) {
       document.getElementById("flashcard-form").reset();
       // Esconde o campo extra se estiver visível
       document.getElementById("input-content-other").classList.add("d-none");
+      // Atualiza o contador após salvar
+      updateFlashcardsCounter(subject);
       updateFlashcardMessage(subject);
     }
   });
@@ -351,6 +361,8 @@ function createFlashcardsInterface(subject) {
         flashcards.splice(idx, 1);
         localStorage.setItem("flashcards_" + subject, JSON.stringify(flashcards));
         alert("Flashcard excluído!");
+        // Atualiza o contador após exclusão
+        updateFlashcardsCounter(subject);
         startStudy();
       }
     }
@@ -481,6 +493,15 @@ function shuffleArray(array) {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
+}
+
+// Atualiza o quadrado com o número de flashcards cadastrados para a matéria
+function updateFlashcardsCounter(subject) {
+  const counterDiv = document.getElementById("flashcards-counter");
+  if (counterDiv) {
+    let cards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
+    counterDiv.textContent = cards.length;
+  }
 }
 
 // Alterna o modo escuro e atualiza o header
