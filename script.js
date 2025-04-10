@@ -446,19 +446,42 @@ function createFlashcardsInterface(subject) {
 
   // Inicia o modo de estudo aplicando o filtro selecionado
   function startStudy() {
-    flashcards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
+    const allCards = JSON.parse(localStorage.getItem("flashcards_" + subject)) || [];
     const filterValue = document.getElementById("filter-content").value;
-    if(filterValue !== "all"){
-      flashcards = flashcards.filter(card => card.content === filterValue);
-    }
-    updateFlashcardMessage(subject);
-    if (flashcards.length === 0) {
+    const filteredCards = filterValue !== "all" ? allCards.filter(card => card.content === filterValue) : allCards;
+  
+    // Se nenhum flashcard for encontrado com o filtro, mostra mensagem e encerra a função
+    if (filteredCards.length === 0) {
+      // Atualiza a interface para informar que não há flashcards para o filtro selecionado
+      document.getElementById("card-question").textContent = "Nenhum flashcard encontrado para o filtro selecionado.";
+      document.getElementById("card-content").textContent = "";
+      document.getElementById("card-answer").textContent = "";
+      flashcards = [];
       return;
     }
+  
+    // Caso contrário, usa os flashcards filtrados para o estudo
+    flashcards = filteredCards;
     studyOrder = shuffleArray([...Array(flashcards.length).keys()]);
     currentIndex = 0;
     displayCurrentCard();
   }
+
+  function updateFilterDropdown() {
+    const filterSelect = document.getElementById("filter-content");
+    if (filterSelect) {
+      const currentVal = filterSelect.value;
+      // Gera as novas opções com todos os conteúdos (exceto "outro")
+      const newOptions = `<option value="all">Todos</option>` + getContentOptionsHtmlFilter();
+      filterSelect.innerHTML = newOptions;
+  
+      // Tenta restaurar o valor atual se ele existir, caso contrário, define como "all"
+      const optionExists = Array.from(filterSelect.options).some(option => option.value === currentVal);
+      filterSelect.value = optionExists ? currentVal : "all";
+    }
+  }
+  
+  
 
   function displayCurrentCard() {
     flashcardContainer.classList.remove("flipped");
